@@ -23,5 +23,5 @@ RUN chmod +x /usr/bin/bash /init.sh && \
     rm -rf /var/cache/apk/*
 
 USER local
-ENTRYPOINT ["/init.sh"]
 WORKDIR /home/$USER
+ENTRYPOINT ["/init.sh"]

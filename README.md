@@ -1,14 +1,8 @@
-# naming
-## Golang
-exelban/baseimage:golang-build-latest
-exelban/baseimage:golang-run-latest
+# baseimage
+[![](https://images.microbadger.com/badges/image/exelban/baseimage.svg)](https://microbadger.com/images/exelban/baseimage "Get your own image badge on microbadger.com")
 
-## NodeJS
-exelban/baseimage:nodejs-build-latest
-exelban/baseimage:nodejs-run-latest
 
-# Building
-docker build -t baseimage:golang-run-latest .
 
-# See output
-docker images baseimage:golang-run-latest
+
+## License
+[MIT License](https://github.com/exelban/baseimage/blob/master/LICENSE)

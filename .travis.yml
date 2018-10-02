@@ -1,0 +1,5 @@
+services:
+  - docker
+
+script:
+  - docker build --rm -f alpine/Dockerfile -t baseimage:alpine-latest alpine

@@ -3,7 +3,6 @@ MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
 
 ENV \
     USER=local \
-    WORK_DIR=app \
     USER_UID=1001 \
     TINI_VERSION=v0.18.0 \
     TIME_ZONE=Europe/Warsaw \
@@ -19,7 +18,7 @@ RUN chmod +x /usr/bin/bash /init.sh && \
     adduser -s /bin/bash -D -u $USER_UID $USER && chown -R $USER:$USER /home/$USER && \
     delgroup ping && \
     addgroup -g 998 ping && addgroup -g 999 docker && addgroup ${USER} docker && \
-    mkdir -p /$WORK_DIR && chown -R $USER:$USER /$WORK_DIR && \
+    mkdir -p /app && chown -R $USER:$USER /app && \
     ln -snf /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime && \
     echo ${TIME_ZONE} > /etc/timezone && date && \
     rm -rf /var/cache/apk/*

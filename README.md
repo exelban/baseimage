@@ -1,8 +1,7 @@
 # baseimage
 [![Build Status](https://travis-ci.org/exelban/baseimage.svg?branch=master)](https://travis-ci.org/exelban/baseimage)  
-Alpine: [![](https://images.microbadger.com/badges/image/exelban/baseimage:alpine-latest.svg)](https://microbadger.com/images/exelban/baseimage "Alpine")  
-Golang [![](https://images.microbadger.com/badges/image/exelban/baseimage:golang-latest.svg)](https://microbadger.com/images/exelban/baseimage "Alpine")
 
+Docker images for golang and nodeJS projects.
 
 # Images
 ## Alpine

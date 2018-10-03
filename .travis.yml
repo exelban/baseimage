@@ -3,3 +3,4 @@ services:
 
 script:
   - docker build --rm -f alpine/Dockerfile -t baseimage:alpine-latest alpine
+  - docker build --rm -f golang/Dockerfile -t baseimage:golang-latest golang

@@ -1,9 +1,9 @@
 #!/sbin/tini /bin/sh
 
-if [ -f "init.sh" ]; then
-    echo "executing ~/init.sh"
-    chmod +x init.sh
-    /srv/init.sh
+if [ -f "/app/init.sh" ]; then
+    echo "executing /app/init.sh"
+    chmod +x /app/init.sh
+    /app/init.sh
     if [ "$?" -ne "0" ]; then
       echo "init.sh failed"
       exit 1

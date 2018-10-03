@@ -19,7 +19,7 @@ RUN chmod +x /usr/bin/bash /init.sh && \
     adduser -s /bin/bash -D -u $USER_UID $USER && chown -R $USER:$USER /home/$USER && \
     delgroup ping && \
     addgroup -g 998 ping && addgroup -g 999 docker && addgroup ${USER} docker && \
-    mkdir -p /${WORK_DIR} && chown -R $USER:$USER /${WORK_DIR} && \
+    mkdir -p /$WORK_DIR && chown -R $USER:$USER /$WORK_DIR && \
     ln -snf /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime && \
     echo ${TIME_ZONE} > /etc/timezone && date && \
     rm -rf /var/cache/apk/*

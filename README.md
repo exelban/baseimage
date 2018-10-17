@@ -9,7 +9,7 @@ Docker images for golang and nodeJS projects.
 Minimalistic alpine image for docker.  
 Based on alpine:3.8.  
 
-Using tzdata for setting local time (by default: Warsaw/Poland, +2).  
+Using tzdata for setting local time (by default: Etc/UTC, +0).  
 For properly starting and killing process using [tini](https://github.com/krallin/tini).
 
 Main process will be started as non root user with UID 1001.

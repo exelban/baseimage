@@ -1,7 +1,7 @@
 FROM golang:1.11.0-alpine3.7
 
 ENV \
-    TIME_ZONE=Europe/Warsaw \
+    TIME_ZONE=Etc/UTC \
     CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64

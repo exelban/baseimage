@@ -1,5 +1,6 @@
 # baseimage
 [![Build Status](https://travis-ci.org/exelban/baseimage.svg?branch=master)](https://travis-ci.org/exelban/baseimage)  
+[![DockerHub build status](https://img.shields.io/docker/build/exelban/baseimage.svg)](https://hub.docker.com/r/exelban/baseimage/builds/)  
 
 Docker images for golang and nodeJS projects.
 

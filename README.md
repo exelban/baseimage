@@ -64,7 +64,7 @@ FROM exelban/baseimage:alpine-latest
 
 COPY --from=build /go/src/example/bin /
 
-ENTRYPOINT ./main
+CMD ["./main"]
 ```
 
 ## NodeJS

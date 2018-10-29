@@ -12,7 +12,7 @@ COPY bash.sh /usr/bin/bash
 COPY init.sh /
 
 RUN chmod +x /usr/bin/bash /init.sh && \
-    apk add --no-cache --update su-exec tzdata tini && \
+    apk add --no-cache --update su-exec tzdata tini openssl && \
     ln -s /sbin/su-exec /usr/local/bin/gosu && \
     mkdir -p /home/$USER && \
     adduser -s /bin/sh -D -u $USER_UID $USER && chown -R $USER:$USER /home/$USER && \

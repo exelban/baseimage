@@ -81,11 +81,6 @@ COPY . .
 
 RUN npm install --silent
 
-
-FROM node:11-alpine
-
-COPY --from=build . .
-
 CMD [ "npm", "start" ]
 ```
 

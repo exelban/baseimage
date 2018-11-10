@@ -41,8 +41,12 @@ Compressed: 180MB
 Uncompressed: 379MB
 
 ## NodeJS
-TODO
+Image based on node:10.
+Added tzdata git packages for time.
 
+### Size
+Compressed: 330MB  
+Uncompressed: 674MB
 
 # Usage
 
@@ -64,11 +68,26 @@ FROM exelban/baseimage:alpine-latest
 
 COPY --from=build /go/src/example/bin /
 
-CMD ["./main"]
+ENTRYPOINT ./main
 ```
 
 ## NodeJS
-TODO
+```$xslt
+FROM exelban/baseimage:node-latest as build
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN npm install --silent
+
+
+FROM node:11-alpine
+
+COPY --from=build . .
+
+CMD [ "npm", "start" ]
+```
 
 
 # License

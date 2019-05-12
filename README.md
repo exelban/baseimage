@@ -30,7 +30,7 @@ Compressed: 3MB
 Uncompressed: 5.57MB + application size
 
 ## Golang
-Image based on golang:1.11.0-alpine3.7.  
+Image based on golang:1.12-alpine.  
 Added tzdata git packages for time and fetching projects from git.
 
 Installed tools:

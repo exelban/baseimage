@@ -1,4 +1,4 @@
-FROM node:10
+FROM node:8.16-alpine
 MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
 
 ENV \

@@ -12,4 +12,10 @@ RUN apk add --no-cache --update tzdata git && \
     echo ${TIME_ZONE} > /etc/timezone && date && \
     rm -rf /var/cache/apk/*
 
-RUN go get -u github.com/golang/dep/cmd/dep
+RUN \
+    go get -u -v github.com/golangci/golangci-lint/cmd/golangci-lint && \
+    cd /go/src/github.com/golangci/golangci-lint && \
+    git checkout v${GOLANGCI} && \
+    cd /go/src/github.com/golangci/golangci-lint/cmd/golangci-lint && \
+    go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'" && \
+    golangci-lint --version

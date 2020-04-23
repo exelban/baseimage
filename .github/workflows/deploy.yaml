@@ -1,0 +1,41 @@
+name: Deploy to docker hub
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set image name
+        run: echo ::set-env name=NAME::$(echo $IMAGE_TAG | sed -E 's/-v*([0-9].*)+//')
+
+      - name: Login to docker hub
+        if: success()
+        uses: actions-hub/docker/login@master
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build image
+        if: success()
+        run: |
+          docker build -t exelban/baseimage:${IMAGE_TAG} ./${NAME}
+          docker tag exelban/baseimage:${IMAGE_TAG} exelban/baseimage:${NAME}-latest
+
+      - name: Push to docker hub (latest)
+        if: success()
+        uses: actions-hub/docker/cli@master
+        with:
+          args: push exelban/baseimage:${NAME}-latest
+
+      - name: Push to docker hub (tag)
+        if: success()
+        uses: actions-hub/docker/cli@master
+        with:
+          args: push exelban/baseimage:${IMAGE_TAG}

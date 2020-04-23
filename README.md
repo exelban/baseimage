@@ -1,6 +1,4 @@
 # baseimage
-[![Travis build status](https://travis-ci.org/exelban/baseimage.svg?branch=master)](https://travis-ci.org/exelban/baseimage)
-[![DockerHub build status](https://img.shields.io/docker/build/exelban/baseimage.svg)](https://hub.docker.com/r/exelban/baseimage/builds/)  
 
 Docker images for golang and nodeJS projects.
 
@@ -34,7 +32,7 @@ Image based on golang:1.12-alpine.
 Added tzdata git packages for time and fetching projects from git.
 
 Installed tools:
-* dep
+* golangci-lint
 
 ### Size
 Compressed: 180MB  

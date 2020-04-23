@@ -1,4 +1,5 @@
 # baseimage
+[![Deploy to github hub](https://github.com/exelban/baseimage/workflows/Deploy%20to%20docker%20hub/badge.svg)](https://github.com/exelban/baseimage/actions)
 
 Docker images for golang and nodeJS projects.
 

@@ -83,6 +83,5 @@ RUN npm install --silent
 CMD [ "npm", "start" ]
 ```
 
-
 # License
 [MIT License](https://github.com/exelban/baseimage/blob/master/LICENSE)

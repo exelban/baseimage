@@ -20,7 +20,7 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set image name
-        run: echo ::set-env name=NAME::$(echo $IMAGE_TAG | sed -E 's/-v*([0-9].*)+//')
+        run: echo "NAME=$(echo $IMAGE_TAG | sed -E 's/-v*([0-9].*)+//')" >> $GITHUB_ENV
 
       - name: Build image
         if: success()

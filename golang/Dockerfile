@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine
+FROM golang:1.18-alpine
 MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
 
 ENV \

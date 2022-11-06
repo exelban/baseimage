@@ -1,10 +1,10 @@
-FROM alpine:3.8
+FROM alpine:3.16
 MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
 
 ENV \
     USER=app \
     USER_UID=1001 \
-    TINI_VERSION=v0.18.0 \
+    TINI_VERSION=v0.19.0 \
     TIME_ZONE=Etc/UTC \
     TERM=xterm-256color
 

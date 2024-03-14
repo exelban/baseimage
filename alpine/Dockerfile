@@ -1,4 +1,4 @@
-FROM alpine:3.16
+FROM alpine:3.19
 MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
 
 ENV \

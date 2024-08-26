@@ -1,4 +1,4 @@
-GOLANG_TAG = "golang-1.22"
+GOLANG_TAG = "golang-1.23"
 ALPINE_TAG = "alpine-3.19"
 NODE_TAG = "node-20"
 

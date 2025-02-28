@@ -1,5 +1,5 @@
 FROM node:20
-MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
+LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>"
 
 ENV \
     NODE_PATH=.:/usr/lib/node_modules:/node_modules \

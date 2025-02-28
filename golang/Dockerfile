@@ -1,5 +1,5 @@
-FROM golang:1.23-alpine
-MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
+FROM golang:1.24-alpine
+LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>"
 
 ENV \
     TIME_ZONE=Etc/UTC \

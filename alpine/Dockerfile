@@ -1,5 +1,5 @@
 FROM alpine:3.19
-MAINTAINER Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>
+LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>"
 
 ENV \
     USER=app \

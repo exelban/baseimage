@@ -1,4 +1,4 @@
-GOLANG_TAG = "golang-1.24"
+GOLANG_TAG = "golang-1.26"
 ALPINE_TAG = "alpine-3.19"
 NODE_TAG = "node-20"
 MONGOBACKUP_TAG = "mongobackup-7.0.16"

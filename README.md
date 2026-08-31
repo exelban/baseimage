@@ -1,77 +1,68 @@
 # baseimage
-[![Deploy to github hub](https://github.com/exelban/baseimage/workflows/Deploy%20to%20docker%20hub/badge.svg)](https://github.com/exelban/baseimage/actions)
 
-Docker images for golang and nodeJS projects.
+Personal docker base images I use across my projects.  
 
-# Images
-## Alpine
-Minimalistic alpine image for docker.
-Based on alpine:3.24.
+Published to [Docker Hub](https://hub.docker.com/r/exelban/baseimage) as `exelban/baseimage:<name>-latest` (plus versioned tags), built for `linux/amd64` and `linux/arm64`.
 
-Using tzdata for setting local time (by default: Etc/UTC, +0).
-For properly starting and killing process using [tini](https://github.com/krallin/tini).
+## Images
 
-The main process is started as a non-root user (`app`, UID 1001) via [su-exec](https://github.com/ncopa/su-exec).
-If you really need to run as root, set the `USER` env variable to `root`:
-```sh
-docker run --rm -e USER=root exelban/baseimage:alpine-latest ./main
-```
+| Tag | Base | What's inside |
+|---|---|---|
+| `alpine-latest` | alpine | Minimal runtime image: [tini](https://github.com/krallin/tini), [su-exec](https://github.com/ncopa/su-exec), tzdata, openssl, curl, ca-certificates |
+| `golang-latest` | golang alpine | Build image for Go projects: git, tzdata |
+| `node-latest` | node slim | Build/runtime image for NodeJS projects: git, tzdata, openssl, curl, ca-certificates |
+| `mongobackup-latest` | mongo | MongoDB tools plus rsync, git, python3 (pymongo) and AWS CLI for backup scripts |
 
-If you want a shell inside the image, run the `shell` command:
-```sh
-docker run --rm -it exelban/baseimage:alpine-latest shell
-```
+## Alpine image behavior
 
-As entrypoint in image using init.sh script. If you need your own initialization logic,
-add your own init.sh to /srv and it will be executed (as the `app` user) before the main process:
-```dockerfile
-COPY ./init.sh /srv/
-```
+The alpine image is the intended final stage for compiled apps:
 
-## Golang
-Image based on golang:1.27-alpine.
-Added tzdata and git packages for time and fetching dependencies from git.
+- tini runs as PID 1, so processes start and stop cleanly.
+- The main process runs as a non-root user `app` (UID 1001). Set `-e USER=root` if you really need root.
+- Timezone defaults to UTC; override with `-e TIME_ZONE=<zone>`.
+- If `/srv/init.sh` exists, it is executed (as the `app` user) before the main process — drop your own script there for custom initialization.
+- Run `shell` to get an interactive shell inside the container:
+  ```sh
+  docker run --rm -it exelban/baseimage:alpine-latest shell
+  ```
 
-## NodeJS
-Image based on node:24-slim.
-Added git, tzdata, openssl, curl and ca-certificates packages.
+## Usage
 
-## Mongobackup
-Image based on mongo:7.0.
-Added rsync, git, python3 (with pymongo) and AWS CLI v2 for backup scripts.
+Typical multi-stage build: compile in the golang image, run in the alpine image.
 
-# Usage
-
-## Golang
 ```dockerfile
 FROM exelban/baseimage:golang-latest as build
 
 WORKDIR /app
 COPY . .
-
-RUN go mod download
-RUN go build -o ./bin/main
+RUN go mod download && go build -o ./bin/main
 
 
 FROM exelban/baseimage:alpine-latest
 
 COPY --from=build /app/bin/main /srv/main
 
-ENTRYPOINT ["/init.sh"]
 CMD ["/srv/main"]
 ```
 
-## NodeJS
+NodeJS:
+
 ```dockerfile
-FROM exelban/baseimage:node-latest as build
+FROM exelban/baseimage:node-latest
 
 WORKDIR /usr/src/app
-
 COPY . .
-
 RUN npm ci
 
-CMD [ "npm", "start" ]
+CMD ["npm", "start"]
+```
+
+## Building
+
+Images are built and pushed by GitHub Actions on every push to master that touches an image folder (only the changed images are rebuilt), or manually via the Makefile:
+
+```sh
+make alpine golang node mongobackup
 ```
 
 # License

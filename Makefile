@@ -1,7 +1,7 @@
 GOLANG_TAG = "golang-1.27"
 ALPINE_TAG = "alpine-3.24"
-NODE_TAG = "node-24"
-MONGOBACKUP_TAG = "mongobackup-7.0"
+NODE_TAG = "node-26"
+MONGOBACKUP_TAG = "mongobackup-8.2"
 
 PLATFORMS = "linux/amd64,linux/arm64"
 

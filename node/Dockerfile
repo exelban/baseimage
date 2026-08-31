@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:26-slim
 LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.authors="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.source="https://github.com/exelban/baseimage" \

@@ -1,4 +1,4 @@
-FROM mongo:7.0
+FROM mongo:8.2
 LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.authors="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.source="https://github.com/exelban/baseimage" \
@@ -6,7 +6,7 @@ LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends rsync curl git unzip python3 python3-pip && \
-    pip3 install --no-cache-dir pymongo && \
+    pip3 install --no-cache-dir --break-system-packages pymongo && \
     curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip && \
     unzip -q /tmp/awscliv2.zip -d /tmp && \
     /tmp/aws/install && \

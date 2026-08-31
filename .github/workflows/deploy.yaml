@@ -43,7 +43,7 @@ jobs:
             exelban/baseimage:${{ env.NAME }}-latest
 
       - name: Scan image
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: exelban/baseimage:${{ env.IMAGE_TAG }}
           severity: CRITICAL,HIGH

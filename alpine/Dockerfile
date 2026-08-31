@@ -1,18 +1,19 @@
-FROM alpine:3.19
-LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>"
+FROM alpine:3.24
+LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
+      org.opencontainers.image.authors="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
+      org.opencontainers.image.source="https://github.com/exelban/baseimage" \
+      org.opencontainers.image.title="baseimage:alpine"
 
 ENV \
     USER=app \
     USER_UID=1001 \
-    TINI_VERSION=v0.19.0 \
     TIME_ZONE=Etc/UTC \
     TERM=xterm-256color
 
-COPY bash.sh /usr/bin/bash
-COPY init.sh /
+COPY --chmod=755 shell.sh /usr/local/bin/shell
+COPY --chmod=755 init.sh /
 
-RUN chmod +x /usr/bin/bash /init.sh && \
-    apk add --no-cache --update su-exec tzdata tini openssl curl ca-certificates && \
+RUN apk add --no-cache su-exec tzdata tini openssl curl ca-certificates && \
     ln -s /sbin/su-exec /usr/local/bin/gosu && \
     mkdir -p /home/$USER && \
     adduser -s /bin/sh -D -u $USER_UID $USER && chown -R $USER:$USER /home/$USER && \
@@ -20,7 +21,6 @@ RUN chmod +x /usr/bin/bash /init.sh && \
     addgroup -g 998 ping && addgroup -g 999 docker && addgroup ${USER} docker && \
     mkdir -p /srv && chown -R $USER:$USER /srv && \
     ln -snf /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime && \
-    echo ${TIME_ZONE} > /etc/timezone && date && \
-    rm -rf /var/cache/apk/*
+    echo ${TIME_ZONE} > /etc/timezone && date
 
 ENTRYPOINT ["/init.sh"]

@@ -5,80 +5,71 @@ Docker images for golang and nodeJS projects.
 
 # Images
 ## Alpine
-Minimalistic alpine image for docker.  
-Based on alpine:3.8.  
+Minimalistic alpine image for docker.
+Based on alpine:3.24.
 
-Using tzdata for setting local time (by default: Etc/UTC, +0).  
+Using tzdata for setting local time (by default: Etc/UTC, +0).
 For properly starting and killing process using [tini](https://github.com/krallin/tini).
 
-Main process will be started as non root user with UID 1001.
-
-If for some reason you want to run sh, just run in image command: bash.
-```$xslt
-run docker --rm -it exelban/baseimage:alpine-latest bash
+The main process is started as a non-root user (`app`, UID 1001) via [su-exec](https://github.com/ncopa/su-exec).
+If you really need to run as root, set the `USER` env variable to `root`:
+```sh
+docker run --rm -e USER=root exelban/baseimage:alpine-latest ./main
 ```
 
-As entrypoint in image using init.sh script. But if you need own configuration just upload your own init.sh to /svr.
-```$xslt
+If you want a shell inside the image, run the `shell` command:
+```sh
+docker run --rm -it exelban/baseimage:alpine-latest shell
+```
+
+As entrypoint in image using init.sh script. If you need your own initialization logic,
+add your own init.sh to /srv and it will be executed (as the `app` user) before the main process:
+```dockerfile
 COPY ./init.sh /srv/
 ```
-And this script will be entrypoint in image.
-
-### Size
-Compressed: 3MB   
-Uncompressed: 5.57MB + application size
 
 ## Golang
-Image based on golang:1.12-alpine.  
-Added tzdata git packages for time and fetching projects from git.
-
-Installed tools:
-* golangci-lint
-
-### Size
-Compressed: 180MB  
-Uncompressed: 379MB
+Image based on golang:1.27-alpine.
+Added tzdata and git packages for time and fetching dependencies from git.
 
 ## NodeJS
-Image based on node:10.
-Added tzdata git packages for time.
+Image based on node:24-slim.
+Added git, tzdata, openssl, curl and ca-certificates packages.
 
-### Size
-Compressed: 330MB  
-Uncompressed: 674MB
+## Mongobackup
+Image based on mongo:7.0.
+Added rsync, git, python3 (with pymongo) and AWS CLI v2 for backup scripts.
 
 # Usage
 
 ## Golang
-```$xslt
+```dockerfile
 FROM exelban/baseimage:golang-latest as build
 
-WORKDIR /go/src/example/
-ADD . /go/src/example/
+WORKDIR /app
+COPY . .
 
-RUN dep ensure
-
-RUN echo "Started compiling..."
+RUN go mod download
 RUN go build -o ./bin/main
-RUN echo "Compiling compete. Output: ./bin/main"
 
 
 FROM exelban/baseimage:alpine-latest
 
-COPY --from=build /go/src/example/bin /
+COPY --from=build /app/bin/main /srv/main
 
-ENTRYPOINT ./main
+ENTRYPOINT ["/init.sh"]
+CMD ["/srv/main"]
 ```
 
 ## NodeJS
-```$xslt
+```dockerfile
 FROM exelban/baseimage:node-latest as build
 
 WORKDIR /usr/src/app
 
 COPY . .
 
-RUN npm install --silent
+RUN npm ci
 
 CMD [ "npm", "start" ]
 ```

@@ -1,12 +1,12 @@
-GOLANG_TAG = "golang-1.26"
-ALPINE_TAG = "alpine-3.19"
-NODE_TAG = "node-20"
-MONGOBACKUP_TAG = "mongobackup-7.0.16"
+GOLANG_TAG = "golang-1.27"
+ALPINE_TAG = "alpine-3.24"
+NODE_TAG = "node-24"
+MONGOBACKUP_TAG = "mongobackup-7.0"
 
 PLATFORMS = "linux/amd64,linux/arm64"
 
 .SILENT: golang alpine node mongobackup
-.PHONY: golang alpine node mongobackup
+.PHONY: all build golang alpine node mongobackup
 
 all: golang alpine node mongobackup
 build: golang alpine node mongobackup

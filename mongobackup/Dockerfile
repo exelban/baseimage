@@ -1,4 +1,4 @@
-FROM mongo:8.2
+FROM mongo:8.3
 LABEL maintainer="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.authors="Serhiy Mitrovtsiy <mitrovtsiy@ukr.net>" \
       org.opencontainers.image.source="https://github.com/exelban/baseimage" \

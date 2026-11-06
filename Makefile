@@ -1,9 +1,10 @@
 GOLANG_TAG = "golang-1.27"
 ALPINE_TAG = "alpine-3.24"
 NODE_TAG = "node-26"
-MONGOBACKUP_TAG = "mongobackup-8.2"
+MONGOBACKUP_TAG = "mongobackup-9.0"
 
 PLATFORMS = "linux/amd64,linux/arm64"
+RELEASE_ID := $(shell git rev-parse HEAD)-$(shell uuidgen | tr '[:upper:]' '[:lower:]')
 
 .SILENT: golang alpine node mongobackup
 .PHONY: all build golang alpine node mongobackup
@@ -11,14 +12,13 @@ PLATFORMS = "linux/amd64,linux/arm64"
 all: golang alpine node mongobackup
 build: golang alpine node mongobackup
 
-golang:
-	docker buildx build --push --platform ${PLATFORMS} --tag exelban/baseimage:$(GOLANG_TAG) --tag exelban/baseimage:golang-latest ./golang/.
+golang: TAG = $(GOLANG_TAG)
+alpine: TAG = $(ALPINE_TAG)
+node: TAG = $(NODE_TAG)
+mongobackup: TAG = $(MONGOBACKUP_TAG)
 
-alpine:
-	docker buildx build --push --platform ${PLATFORMS} --tag exelban/baseimage:$(ALPINE_TAG) --tag exelban/baseimage:alpine-latest ./alpine/.
-
-node:
-	docker buildx build --push --platform ${PLATFORMS} --tag exelban/baseimage:$(NODE_TAG) --tag exelban/baseimage:node-latest ./node/.
-
-mongobackup:
-	docker buildx build --push --platform ${PLATFORMS} --tag exelban/baseimage:$(MONGOBACKUP_TAG) --tag exelban/baseimage:mongobackup-latest ./mongobackup/.
+golang alpine node mongobackup:
+	docker buildx build --pull --push --platform ${PLATFORMS} \
+		--tag exelban/baseimage:$(TAG) --tag exelban/baseimage:$@-latest \
+		--tag ghcr.io/exelban/baseimage:$(TAG) --tag ghcr.io/exelban/baseimage:$@-latest \
+		--tag exelban/baseimage:$@-sha-$(RELEASE_ID) --tag ghcr.io/exelban/baseimage:$@-sha-$(RELEASE_ID) ./$@/.

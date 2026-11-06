@@ -9,6 +9,10 @@ on:
       - 'golang/**'
       - 'node/**'
       - 'mongobackup/**'
+      - 'Makefile'
+      - '.github/workflows/deploy.yaml'
+  schedule:
+    - cron: '0 4 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -31,16 +35,19 @@ jobs:
       - name: Detect changed images
         id: filter
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            changed=$(printf 'alpine\ngolang\nnode\nmongobackup\n')
+          if [ "${{ github.event_name }}" != "push" ]; then
+            changed=$(printf 'alpine/\ngolang/\nnode/\nmongobackup/\n')
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
-            changed=$(git diff --name-only HEAD^ HEAD)
+            changed=$(git ls-files)
           else
             changed=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
           fi
+          if echo "$changed" | grep -Eq '^(Makefile|\.github/workflows/deploy.yaml)$'; then
+            changed=$(printf 'alpine/\ngolang/\nnode/\nmongobackup/\n')
+          fi
           images=$(echo "$changed" | awk -F/ '/^(alpine|golang|node|mongobackup)\//{print $1}' | sort -u | jq -R . | jq -sc .)
           echo "changed images: $images"
-          echo "images=$images" >> $GITHUB_OUTPUT
+          echo "images=$images" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: changes
@@ -55,12 +62,13 @@ jobs:
 
       - name: Read image version from Makefile
         run: |
-          tag=$(sed -nE "s/^$(echo '${{ matrix.image }}' | tr 'a-z' 'A-Z')_TAG *= *\"?([^\"]+)\"?.*/\1/p" Makefile)
+          tag=$(sed -nE "s/^$(echo '${{ matrix.image }}' | tr '[:lower:]' '[:upper:]')_TAG *= *\"?([^\"]+)\"?.*/\1/p" Makefile)
           if [ -z "$tag" ]; then
             echo "no tag found in Makefile for ${{ matrix.image }}" >&2
             exit 1
           fi
-          echo "IMAGE_TAG=$tag" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=${{ matrix.image }}-sha-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -68,25 +76,123 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Build and test images
+        env:
+          IMAGE: ${{ matrix.image }}
+          FRESH_BUILD: ${{ github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          temp=$(mktemp -d)
+          trap 'docker rm -fv smoke-signal smoke-mongo >/dev/null 2>&1 || true; docker network rm baseimage-smoke >/dev/null 2>&1 || true; rm -rf "$temp"' EXIT
+          if [ "$IMAGE" = "mongobackup" ]; then
+            docker network create baseimage-smoke
+            docker run -d --name smoke-mongo --network baseimage-smoke mongo:9.0 --bind_ip_all
+            for ((attempt = 0; attempt < 60; attempt++)); do
+              if docker exec smoke-mongo mongosh --quiet --eval 'db.adminCommand({ping: 1})'; then break; fi
+              sleep 1
+            done
+            docker exec smoke-mongo mongosh --quiet --eval 'db.adminCommand({ping: 1})'
+          fi
+          # shellcheck disable=SC2016
+          for arch in amd64 arm64; do
+            tag="baseimage-test:$arch"
+            args=(--pull)
+            if [ "$FRESH_BUILD" = "true" ]; then
+              args+=(--no-cache)
+            fi
+            docker buildx build "${args[@]}" --platform "linux/$arch" --load --tag "$tag" "./$IMAGE"
+            run=(docker run --rm --platform "linux/$arch")
+            case "$IMAGE" in
+              alpine)
+                "${run[@]}" "$tag" sh -c 'test "$(id -u)" = 1001'
+                "${run[@]}" -e USER=root "$tag" sh -c 'test "$(id -u)" = 0'
+                "${run[@]}" "$tag" sh -c '! grep -q "^docker:" /etc/group'
+                "${run[@]}" --user 1001:1001 --group-add 4321 "$tag" sh -c 'id -G | grep -qw 4321'
+                "${run[@]}" --user 1234:1234 "$tag" sh -c 'test "$(id -u)" = 1234'
+                "${run[@]}" --read-only --user 1234:1234 -e TIME_ZONE=Asia/Tokyo "$tag" sh -c 'test "$(date +%z)" = +0900'
+                printf '#!/bin/sh\nid -u > /tmp/hook-user\n' > "$temp/init.sh"
+                chmod 755 "$temp/init.sh"
+                for user in 0 1234; do
+                  expected=1001
+                  if [ "$user" = 1234 ]; then expected=1234; fi
+                  "${run[@]}" --user "$user" -v "$temp/init.sh:/srv/init.sh:ro" "$tag" sh -c "test \"\$(cat /tmp/hook-user)\" = $expected"
+                done
+                printf '#!/bin/sh\nexit 1\n' > "$temp/init.sh"
+                if "${run[@]}" -v "$temp/init.sh:/srv/init.sh:ro" "$tag" true; then exit 1; fi
+                if "${run[@]}" --entrypoint /bin/sh "$tag" -c 'printf "#!/bin/sh\nexit 0\n" > /srv/init.sh; chmod 644 /srv/init.sh; exec /init.sh true'; then exit 1; fi
+                if "${run[@]}" "$tag"; then exit 1; fi
+                docker run -d --name smoke-signal --platform "linux/$arch" "$tag" sh -c 'trap "exit 0" TERM; touch /tmp/ready; while :; do sleep 1 & wait $!; done'
+                for ((attempt = 0; attempt < 30; attempt++)); do
+                  if docker exec smoke-signal test -f /tmp/ready; then break; fi
+                  sleep 1
+                done
+                docker exec smoke-signal test -f /tmp/ready
+                docker stop --timeout 5 smoke-signal
+                test "$(docker inspect -f '{{.State.ExitCode}}' smoke-signal)" = 0
+                docker rm smoke-signal
+                ;;
+              golang)
+                "${run[@]}" "$tag" sh -c 'mkdir /tmp/check && cd /tmp/check && go mod init example.com/check && printf "package main\nfunc main() {}\n" > main.go && go build ./... && golangci-lint run --no-config'
+                ;;
+              node)
+                "${run[@]}" "$tag" sh -c 'node -e "process.exit(0)" && npm --version && test "$(yarn --version)" = 1.22.22'
+                "${run[@]}" --user node "$tag" node -e 'if (process.getuid() === 0) process.exit(1)'
+                "${run[@]}" "$tag" -e 'if (require("fs").readFileSync("/proc/1/comm", "utf8").trim() !== "tini") process.exit(1)'
+                docker run -d --name smoke-signal --platform "linux/$arch" --user node "$tag" node -e 'process.on("SIGTERM", () => process.exit(0)); require("fs").writeFileSync("/tmp/ready", ""); setInterval(() => {}, 1000)'
+                for ((attempt = 0; attempt < 30; attempt++)); do
+                  if docker exec smoke-signal test -f /tmp/ready; then break; fi
+                  sleep 1
+                done
+                docker exec smoke-signal test -f /tmp/ready
+                docker stop --timeout 5 smoke-signal
+                test "$(docker inspect -f '{{.State.ExitCode}}' smoke-signal)" = 0
+                docker rm smoke-signal
+                ;;
+              mongobackup)
+                "${run[@]}" "$tag" sh -c 'mongodump --version && mongorestore --version && aws --version && python3 -c "import pymongo, sys; assert sys.prefix == \"/opt/venv\"" && rsync --version && git --version && ! command -v mongod'
+                "${run[@]}" --network baseimage-smoke "$tag" python3 -c 'from pymongo import MongoClient; from bson import Binary, Decimal128; c = MongoClient("mongodb://smoke-mongo:27017"); c.drop_database("backup_check"); c.drop_database("restore_check"); d = c.backup_check; d.records.insert_one({"_id": 1, "name": "backup", "amount": Decimal128("12.34"), "payload": Binary(b"backup"), "nested": {"values": [1, 2, 3]}}); d.records.create_index("name", unique=True); d.create_collection("empty")'
+                "${run[@]}" --network baseimage-smoke "$tag" sh -c 'mongodump --uri=mongodb://smoke-mongo:27017 --db=backup_check --archive=/tmp/backup.gz --gzip && mongorestore --uri=mongodb://smoke-mongo:27017 --archive=/tmp/backup.gz --gzip --nsFrom="backup_check.*" --nsTo="restore_check.*"'
+                "${run[@]}" --network baseimage-smoke "$tag" python3 -c 'from pymongo import MongoClient; c = MongoClient("mongodb://smoke-mongo:27017"); a = c.backup_check; b = c.restore_check; assert sorted(a.list_collection_names()) == sorted(b.list_collection_names()); assert list(a.records.find()) == list(b.records.find()); assert a.records.index_information() == b.records.index_information()'
+                ;;
+            esac
+          done
+
+      - name: Scan amd64 image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: baseimage-test:amd64
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Scan arm64 image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: baseimage-test:arm64
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
       - name: Login to docker hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./${{ matrix.image }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            exelban/baseimage:${{ env.IMAGE_TAG }}
-            exelban/baseimage:${{ matrix.image }}-latest
-
-      - name: Scan image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: exelban/baseimage:${{ env.IMAGE_TAG }}
-          severity: CRITICAL,HIGH
-          exit-code: '0'
+      - name: Publish tested images
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          for arch in amd64 arm64; do
+            tag="exelban/baseimage:$RELEASE_TAG-$arch"
+            docker tag "baseimage-test:$arch" "$tag"
+            docker push "$tag"
+            docker tag "baseimage-test:$arch" "exelban/baseimage:$IMAGE_TAG-$arch"
+            docker push "exelban/baseimage:$IMAGE_TAG-$arch"
+          done
+          docker buildx imagetools create \
+            --tag "exelban/baseimage:$RELEASE_TAG" \
+            --tag "exelban/baseimage:$IMAGE_TAG" \
+            --tag "exelban/baseimage:$IMAGE-latest" \
+            "exelban/baseimage:$RELEASE_TAG-amd64" \
+            "exelban/baseimage:$RELEASE_TAG-arm64"
